@@ -1,0 +1,34 @@
+plugins {
+    id 'java'
+}
+
+group 'ru.nsu.ccfit.khudyakov'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+
+    //Mongo
+    implementation 'org.mongodb:mongo-java-driver:3.12.10'
+
+    //Tests
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.2'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.2'
+
+    //Lombok
+    compileOnly 'org.projectlombok:lombok:1.18.22'
+    annotationProcessor 'org.projectlombok:lombok:1.18.22'
+
+    //Utils
+    implementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.3'
+    implementation group: 'org.apache.commons', name: 'commons-collections4', version: '4.0'
+    
+
+}
+
+test {
+    useJUnitPlatform()
+}
