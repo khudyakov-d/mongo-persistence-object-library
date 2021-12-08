@@ -20,7 +20,7 @@ public class Property {
     }
 
     public TypeInfo<?> getType() {
-        return TypeInfoDiscoverer.getInfo(field.getType());
+        return TypeInfoDiscoverer.getInfo(field.getGenericType());
     }
 
     public Field getField() {

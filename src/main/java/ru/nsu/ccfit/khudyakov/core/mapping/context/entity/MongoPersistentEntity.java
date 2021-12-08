@@ -13,6 +13,7 @@ import ru.nsu.ccfit.khudyakov.core.persistence.Id;
 
 import java.beans.Introspector;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class MongoPersistentEntity<T> extends AbstractPersistentEntity<T, MongoPersistentProperty> {
 
@@ -45,6 +46,13 @@ public class MongoPersistentEntity<T> extends AbstractPersistentEntity<T, MongoP
     @Override
     public MongoPersistentProperty getIdProperty() {
         return idProperty;
+    }
+
+    @Override
+    public List<MongoPersistentProperty> getAssociations() {
+        return properties.stream()
+                .filter(p -> p.isAssociation())
+                .collect(Collectors.toList());
     }
 
     @Override

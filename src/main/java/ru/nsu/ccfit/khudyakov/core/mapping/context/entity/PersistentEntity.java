@@ -16,6 +16,8 @@ public interface PersistentEntity<T, P extends PersistentProperty<P>> {
 
     List<P> getProperties();
 
+    List<P> getAssociations();
+
     void addPersistentProperty(P property);
 
     <B> PersistentPropertyAccessor<B> getPropertyAccessor(B bean);

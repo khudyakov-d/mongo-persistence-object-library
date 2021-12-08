@@ -2,6 +2,7 @@ package ru.nsu.ccfit.khudyakov.core.mapping.context.property;
 
 import ru.nsu.ccfit.khudyakov.core.mapping.context.entity.PersistentEntity;
 import ru.nsu.ccfit.khudyakov.core.mapping.context.type.TypeInfo;
+import ru.nsu.ccfit.khudyakov.core.persistence.Ref;
 
 import java.lang.reflect.Field;
 
@@ -30,5 +31,11 @@ public class MongoPersistentProperty extends AbstractPersistentProperty<MongoPer
     public Field getField() {
         return property.getField();
     }
+
+    @Override
+    public boolean isAssociation() {
+        return getField().isAnnotationPresent(Ref.class);
+    }
+
 
 }

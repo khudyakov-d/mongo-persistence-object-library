@@ -4,4 +4,6 @@ public interface TypeInfo<T> {
 
     Class<T> getType();
 
+    boolean isCollection();
+
 }

@@ -15,4 +15,6 @@ public interface PersistentProperty<P extends PersistentProperty<P>> {
 
     Field getField();
 
+    boolean isAssociation();
+
 }
