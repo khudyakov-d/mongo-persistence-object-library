@@ -11,7 +11,6 @@ import java.util.List;
 
 @Getter
 @Setter
-@ToString
 @Document(collection = "fruits")
 public class Fruit {
 
@@ -23,6 +22,6 @@ public class Fruit {
     private Double price;
 
     @Ref
-    private List<Shop> shops;
+    private List<Variety> shops;
 
 }

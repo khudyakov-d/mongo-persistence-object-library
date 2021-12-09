@@ -15,12 +15,13 @@ import ru.nsu.ccfit.khudyakov.core.mapping.context.type.ParametrizedListTypeInfo
 import ru.nsu.ccfit.khudyakov.core.mapping.document.DocumentAccessor;
 import ru.nsu.ccfit.khudyakov.core.mapping.document.DocumentAccessorImpl;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static com.mongodb.client.model.Filters.eq;
-import static ru.nsu.ccfit.khudyakov.core.mapping.context.type.TypeInfoDiscoverer.getInfo;
 
 public class MongoOperationsImpl implements MongoOperations {
 
@@ -38,12 +39,15 @@ public class MongoOperationsImpl implements MongoOperations {
 
     @Override
     public <T> T save(T entity) {
+        if (entity == null) {
+            throw new IllegalArgumentException("entity must not be null");
+        }
+
         ClassTypeInfo<?> typeInfo = ClassTypeInfo.from(entity.getClass());
         MongoPersistentEntity<?> persistentEntity = mongoContext.getPersistentEntity(typeInfo);
 
-        Document document = mongoConverter.write(entity);
         MongoCollection<Document> collection = mongoDatabase.getCollection(persistentEntity.getCollectionName());
-
+        Document document = mongoConverter.write(entity);
         doSave(document, collection);
 
         return findById(document.get(ID), (Class<T>) entity.getClass());
@@ -54,75 +58,101 @@ public class MongoOperationsImpl implements MongoOperations {
         if (id == null) {
             collection.insertOne(document);
         } else {
-            collection.updateOne(eq(ID, id), document);
+            collection.replaceOne(eq(ID, id), document);
         }
     }
 
     @Override
     public <T> T findById(Object id, Class<T> entityClass) {
+        if (id == null) {
+            throw new IllegalArgumentException("id must not be null");
+        }
+        if (entityClass == null) {
+            throw new IllegalArgumentException("entityClass must not be null");
+        }
+
+        return doFind(id, entityClass, new HashMap<>());
+    }
+
+    private <T> T doFind(Object id, Class<T> entityClass, Map<ObjectId, Object> resolvedRefs) {
         ClassTypeInfo<T> typeInfo = ClassTypeInfo.from(entityClass);
         MongoPersistentEntity<?> persistentEntity = mongoContext.getPersistentEntity(typeInfo);
 
         String collectionName = persistentEntity.getCollectionName();
         MongoCollection<Document> collection = mongoDatabase.getCollection(collectionName);
 
-        Document document = collection.find(eq(ID, convertId(id))).first();
-
+        ObjectId documentId = convertId(id);
+        Document document = collection.find(eq(ID, documentId)).first();
         if (document == null) {
             return null;
         }
 
         T result = mongoConverter.read(entityClass, document);
-        readAssociations(persistentEntity, result, document);
+        resolvedRefs.put(documentId, result);
+
+        readAssociations(persistentEntity, result, document, resolvedRefs);
 
         return result;
     }
 
-    private <T> void readAssociations(MongoPersistentEntity<?> persistentEntity, T entityValue, Document document) {
+    private <T> void readAssociations(MongoPersistentEntity<?> persistentEntity,
+                                      T entityValue,
+                                      Document document,
+                                      Map<ObjectId, Object> resolvedRefs) {
+
         DocumentAccessor documentAccessor = new DocumentAccessorImpl(document);
 
-        MongoPersistentEntity<?> childEntity = mongoContext.getPersistentEntity(getInfo(entityValue.getClass()));
-        PersistentPropertyAccessor<T> propertyAccessor = childEntity.getPropertyAccessor(entityValue);
+        PersistentPropertyAccessor<T> propertyAccessor = persistentEntity.getPropertyAccessor(entityValue);
 
         List<MongoPersistentProperty> associations = persistentEntity.getAssociations();
         for (MongoPersistentProperty association : associations) {
             if (association.getTypeInfo().isCollection()) {
-                readCollectionAssociation(documentAccessor, propertyAccessor, association);
+                readCollectionAssociation(documentAccessor, propertyAccessor, association, resolvedRefs);
             } else {
-                readAssociation(documentAccessor, propertyAccessor, association);
+                readObjectAssociation(documentAccessor, propertyAccessor, association, resolvedRefs);
             }
         }
     }
 
     private <T> void readCollectionAssociation(DocumentAccessor documentAccessor,
                                                PersistentPropertyAccessor<T> propertyAccessor,
-                                               MongoPersistentProperty association) {
+                                               MongoPersistentProperty association, Map<ObjectId, Object> resolvedRefs) {
         ParametrizedListTypeInfo<?> typeInfo = (ParametrizedListTypeInfo<?>) association.getTypeInfo();
         List<?> refs = (List<?>) documentAccessor.get(association);
+        if (refs == null) {
+            return;
+        }
+
         List<?> refValues = refs.stream()
-                .map(ref -> resolveRef(typeInfo.getArgumentType(), ref))
+                .map(ref -> resolveRef(typeInfo.getArgumentType(), ref, resolvedRefs))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
         propertyAccessor.setProperty(association, refValues);
+
     }
 
-    private <T> void readAssociation(DocumentAccessor documentAccessor,
-                                     PersistentPropertyAccessor<T> propertyAccessor,
-                                     MongoPersistentProperty association) {
+    private <T> void readObjectAssociation(DocumentAccessor documentAccessor,
+                                           PersistentPropertyAccessor<T> propertyAccessor,
+                                           MongoPersistentProperty association,
+                                           Map<ObjectId, Object> resolvedRefs) {
         Object ref = documentAccessor.get(association);
-        Object refValue = resolveRef(association.getTypeInfo().getType(), ref);
+        if (ref == null) {
+            return;
+        }
+
+        Object refValue = resolveRef(association.getTypeInfo().getType(), ref, resolvedRefs);
         if (refValue != null) {
             propertyAccessor.setProperty(association, refValue);
         }
     }
 
-    private Object resolveRef(Class<?> type, Object ref) {
+    private Object resolveRef(Class<?> type, Object ref, Map<ObjectId, Object> resolvedRefs) {
         if (ref instanceof Document) {
             Object id = ((Document) ref).get(ID);
-            return findById(id, type);
-        } else {
-            throw new IllegalStateException();
+            Object refValue = resolvedRefs.get(id);
+            return refValue != null ? refValue : doFind(id, type, resolvedRefs);
         }
+        throw new IllegalStateException();
     }
 
     private ObjectId convertId(Object id) {
@@ -132,11 +162,15 @@ public class MongoOperationsImpl implements MongoOperations {
         if (id instanceof ObjectId) {
             return (ObjectId) id;
         }
-        throw new IllegalArgumentException();
+        throw new IllegalStateException();
     }
 
     @Override
     public void remove(Object entity) {
+        if (entity == null) {
+            throw new IllegalArgumentException("entity must not be null");
+        }
+
         Class<?> entityClass = entity.getClass();
         ClassTypeInfo<?> typeInfo = ClassTypeInfo.from(entityClass);
         MongoPersistentEntity<?> persistentEntity = mongoContext.getPersistentEntity(typeInfo);
@@ -145,8 +179,7 @@ public class MongoOperationsImpl implements MongoOperations {
         MongoCollection<Document> collection = mongoDatabase.getCollection(collectionName);
 
         PersistentPropertyAccessor<Object> propertyAccessor = persistentEntity.getPropertyAccessor(entity);
-        Object idValue = propertyAccessor.getPropertyValue(persistentEntity.getIdProperty());
-        ObjectId id = convertId(idValue);
+        Object id = propertyAccessor.getPropertyValue(persistentEntity.getIdProperty());
 
         collection.deleteOne(eq(ID, convertId(id)));
     }

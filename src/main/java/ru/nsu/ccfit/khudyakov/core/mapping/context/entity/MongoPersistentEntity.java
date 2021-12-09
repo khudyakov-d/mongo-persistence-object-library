@@ -51,7 +51,7 @@ public class MongoPersistentEntity<T> extends AbstractPersistentEntity<T, MongoP
     @Override
     public List<MongoPersistentProperty> getAssociations() {
         return properties.stream()
-                .filter(p -> p.isAssociation())
+                .filter(MongoPersistentProperty::isAssociation)
                 .collect(Collectors.toList());
     }
 

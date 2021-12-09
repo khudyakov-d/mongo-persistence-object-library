@@ -3,12 +3,11 @@ package ru.nsu.ccfit.khudyakov;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
-import org.bson.types.ObjectId;
 import ru.nsu.ccfit.khudyakov.core.MongoOperations;
 import ru.nsu.ccfit.khudyakov.core.MongoOperationsImpl;
 import ru.nsu.ccfit.khudyakov.test.FruitsRepository;
 import ru.nsu.ccfit.khudyakov.test.Fruit;
-import ru.nsu.ccfit.khudyakov.test.Shop;
+import ru.nsu.ccfit.khudyakov.test.Variety;
 import ru.nsu.ccfit.khudyakov.test.ShopRepository;
 
 import java.util.List;
@@ -21,22 +20,30 @@ public class Main {
             MongoDatabase database = mongoClient.getDatabase("mydb");
             MongoOperations mongoOperations = new MongoOperationsImpl(database);
 
-            ShopRepository shopRepository = new ShopRepository(mongoOperations, Shop.class);
+            ShopRepository shopRepository = new ShopRepository(mongoOperations, Variety.class);
+            Variety variety = new Variety();
+            variety.setName("red");
+            variety = shopRepository.save(variety);
+
             FruitsRepository fruitsRepository = new FruitsRepository(mongoOperations, Fruit.class);
-
-            Shop shop = new Shop();
-            shop.setName("metro");
-            shop = shopRepository.save(shop);
-
             Fruit fruit = new Fruit();
-            fruit.setName("mango");
+            fruit.setName("apple");
             fruit.setPrice(10d);
-            fruit.setShops(List.of(shop));
-
             fruit = fruitsRepository.save(fruit);
 
-            Optional<Fruit> result = fruitsRepository.findById(fruit.getId());
-            System.out.println(result);
+            variety.setFruit(fruit);
+            variety = shopRepository.save(variety);
+
+            fruit.setShops(List.of(variety));
+            fruit = fruitsRepository.save(fruit);
+
+            Optional<Fruit> searchResult = fruitsRepository.findById(fruit.getId());
+            fruit = searchResult.orElseThrow();
+
+            /*
+           fruitsRepository.delete(fruit);
+           searchResult = fruitsRepository.findById(fruit.getId());
+           System.out.println(searchResult.isEmpty());;*/
         }
     }
 

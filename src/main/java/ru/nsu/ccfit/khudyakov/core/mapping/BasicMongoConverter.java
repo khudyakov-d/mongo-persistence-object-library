@@ -88,23 +88,26 @@ public class BasicMongoConverter implements MongoConverter {
         MongoPersistentEntity<?> childEntity = mongoContext.getPersistentEntity(getInfo(typeInfo.getArgumentType()));
 
         List<?> values = (List<?>) propertyAccessor.getPropertyValue(targetProperty);
-        List<Map<String, ? extends Serializable>> documents = values.stream()
-                .map(v -> mapChildValue(childEntity, v))
-                .collect(Collectors.toList());
+        if (values != null) {
+            List<Map<String, ? extends Serializable>> documents = values.stream()
+                    .map(v -> mapChildValue(childEntity, v))
+                    .collect(Collectors.toList());
 
-        documentAccessor.put(targetProperty, documents);
+            documentAccessor.put(targetProperty, documents);
+        }
     }
 
     private void writeRef(MongoPersistentProperty targetProperty,
                           PersistentPropertyAccessor<Object> propertyAccessor,
                           DocumentAccessor documentAccessor) {
-        ParametrizedListTypeInfo<?> typeInfo = (ParametrizedListTypeInfo<?>) targetProperty.getTypeInfo();
-        MongoPersistentEntity<?> childEntity = mongoContext.getPersistentEntity(getInfo(typeInfo.getArgumentType()));
+        TypeInfo<?> typeInfo = targetProperty.getTypeInfo();
+        MongoPersistentEntity<?> childEntity = mongoContext.getPersistentEntity(getInfo(typeInfo.getType()));
 
         Object propertyValue = propertyAccessor.getPropertyValue(targetProperty);
-        Map<String, ? extends Serializable> document = mapChildValue(childEntity, propertyValue);
-
-        documentAccessor.put(targetProperty, document);
+        if (propertyValue != null) {
+            Map<String, ? extends Serializable> document = mapChildValue(childEntity, propertyValue);
+            documentAccessor.put(targetProperty, document);
+        }
     }
 
     private ObjectId convertId(MongoPersistentProperty idProperty, Object idValue) {

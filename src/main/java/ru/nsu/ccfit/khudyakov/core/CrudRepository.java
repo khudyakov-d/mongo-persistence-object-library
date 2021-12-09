@@ -8,6 +8,6 @@ public interface CrudRepository<T, I> {
 
     Optional<T> findById(I id);
 
-    void deleteById(I id);
+    <S extends T> void delete(S entity);
 
 }

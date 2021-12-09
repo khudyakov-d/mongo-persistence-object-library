@@ -5,6 +5,8 @@ import ru.nsu.ccfit.khudyakov.core.mapping.context.property.MongoPersistentPrope
 import ru.nsu.ccfit.khudyakov.core.mapping.context.property.Property;
 import ru.nsu.ccfit.khudyakov.core.mapping.context.type.TypeInfo;
 
+import java.util.List;
+
 public class MongoMappingContext extends AbstractMappingContext<MongoPersistentEntity<?>, MongoPersistentProperty> {
 
     private MongoMappingContext() {
@@ -21,6 +23,7 @@ public class MongoMappingContext extends AbstractMappingContext<MongoPersistentE
 
     @Override
     protected MongoPersistentProperty createPersistentProperty(Property property, MongoPersistentEntity<?> owner) {
+        MongoPersistentProperty.validateProperty(property);
         return new MongoPersistentProperty(property, owner);
     }
 

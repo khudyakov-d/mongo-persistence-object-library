@@ -23,8 +23,8 @@ public abstract class MongoRepository<T, I> implements CrudRepository<T, I> {
     }
 
     @Override
-    public void deleteById(I id) {
-
+    public <S extends T> void delete(S entity) {
+        mongoOperations.remove(entity);
     }
 
 }
