@@ -8,7 +8,7 @@ import ru.nsu.ccfit.khudyakov.core.persistence.Ref;
 
 @Getter
 @Setter
-@Document(collection = "variety")
+@Document(collection = "varieties")
 public class Variety {
 
     @Id
