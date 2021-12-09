@@ -3,14 +3,14 @@ package ru.nsu.ccfit.khudyakov.core.mapping;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 import ru.nsu.ccfit.khudyakov.core.mapping.context.MongoMappingContext;
-import ru.nsu.ccfit.khudyakov.core.mapping.context.type.ParametrizedListTypeInfo;
-import ru.nsu.ccfit.khudyakov.core.mapping.document.DocumentAccessor;
-import ru.nsu.ccfit.khudyakov.core.mapping.document.DocumentAccessorImpl;
 import ru.nsu.ccfit.khudyakov.core.mapping.context.entity.MongoPersistentEntity;
 import ru.nsu.ccfit.khudyakov.core.mapping.context.property.MongoPersistentProperty;
 import ru.nsu.ccfit.khudyakov.core.mapping.context.property.PersistentPropertyAccessor;
 import ru.nsu.ccfit.khudyakov.core.mapping.context.type.ClassTypeInfo;
+import ru.nsu.ccfit.khudyakov.core.mapping.context.type.ParametrizedListTypeInfo;
 import ru.nsu.ccfit.khudyakov.core.mapping.context.type.TypeInfo;
+import ru.nsu.ccfit.khudyakov.core.mapping.document.DocumentAccessor;
+import ru.nsu.ccfit.khudyakov.core.mapping.document.DocumentAccessorImpl;
 
 import java.io.Serializable;
 import java.util.List;
@@ -68,16 +68,16 @@ public class BasicMongoConverter implements MongoConverter {
                                  DocumentAccessor documentAccessor) {
         List<MongoPersistentProperty> properties = persistentEntity.getProperties();
         for (MongoPersistentProperty property : properties) {
-            if (property.isAssociation()) {
-                if (property.getTypeInfo().isCollection()) {
-                    writeRefs(property, propertyAccessor, documentAccessor);
-                } else {
-                    writeRef(property, propertyAccessor, documentAccessor);
-                }
+            if (!property.isAssociation()) {
+                documentAccessor.put(property, propertyAccessor.getPropertyValue(property));
                 continue;
             }
 
-            documentAccessor.put(property, propertyAccessor.getPropertyValue(property));
+            if (property.getTypeInfo().isCollection()) {
+                writeRefs(property, propertyAccessor, documentAccessor);
+            } else {
+                writeRef(property, propertyAccessor, documentAccessor);
+            }
         }
     }
 
@@ -111,15 +111,15 @@ public class BasicMongoConverter implements MongoConverter {
     }
 
     private ObjectId convertId(MongoPersistentProperty idProperty, Object idValue) {
-        ObjectId id;
-        if (idProperty.getTypeInfo().getType().isAssignableFrom(ObjectId.class)) {
-            id = ((ObjectId) idValue);
-        } else if (idProperty.getTypeInfo().getType().isAssignableFrom(String.class)) {
-            id = new ObjectId((String) idValue);
-        } else {
-            throw new IllegalArgumentException();
+        if (ObjectId.class.equals(idProperty.getTypeInfo().getType())) {
+            return ((ObjectId) idValue);
         }
-        return id;
+
+        if (String.class.equals(idProperty.getTypeInfo().getType())) {
+            return new ObjectId((String) idValue);
+        }
+
+        throw new IllegalArgumentException();
     }
 
     private Map<String, ? extends Serializable> mapChildValue(MongoPersistentEntity<?> entity, Object entityValue) {
