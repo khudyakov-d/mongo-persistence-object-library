@@ -4,13 +4,12 @@ import ru.nsu.ccfit.khudyakov.core.exception.NotValidPropertyTypeException;
 import ru.nsu.ccfit.khudyakov.core.mapping.context.entity.PersistentEntity;
 import ru.nsu.ccfit.khudyakov.core.mapping.context.type.TypeInfo;
 import ru.nsu.ccfit.khudyakov.core.persistence.Ref;
-import ru.nsu.ccfit.khudyakov.test.Variety;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 
-import static java.lang.String.*;
+import static java.lang.String.format;
 
 public class MongoPersistentProperty extends AbstractPersistentProperty<MongoPersistentProperty> {
 
@@ -19,7 +18,7 @@ public class MongoPersistentProperty extends AbstractPersistentProperty<MongoPer
     static {
         SIMPLE_TYPE_WRAPPERS = new ArrayList<>();
         SIMPLE_TYPE_WRAPPERS.add(Byte.class);
-        SIMPLE_TYPE_WRAPPERS.add(Variety.class);
+        SIMPLE_TYPE_WRAPPERS.add(Short.class);
         SIMPLE_TYPE_WRAPPERS.add(Integer.class);
         SIMPLE_TYPE_WRAPPERS.add(Long.class);
         SIMPLE_TYPE_WRAPPERS.add(Float.class);
