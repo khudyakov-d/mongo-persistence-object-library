@@ -35,7 +35,7 @@ public class Main {
             variety.setFruit(fruit);
             variety = shopRepository.save(variety);
 
-            fruit.setShops(List.of(variety));
+            fruit.setVarieties(List.of(variety));
             fruit = fruitsRepository.save(fruit);
 
             Optional<Fruit> searchResult = fruitsRepository.findById(fruit.getId());

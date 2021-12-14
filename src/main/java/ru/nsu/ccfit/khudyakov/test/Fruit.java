@@ -2,7 +2,6 @@ package ru.nsu.ccfit.khudyakov.test;
 
 import lombok.Getter;
 import lombok.Setter;
-import lombok.ToString;
 import ru.nsu.ccfit.khudyakov.core.persistence.Document;
 import ru.nsu.ccfit.khudyakov.core.persistence.Id;
 import ru.nsu.ccfit.khudyakov.core.persistence.Ref;
@@ -22,6 +21,6 @@ public class Fruit {
     private Double price;
 
     @Ref
-    private List<Variety> shops;
+    private List<Variety> varieties;
 
 }

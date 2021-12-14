@@ -1,16 +1,13 @@
 package ru.nsu.ccfit.khudyakov.core.mapping.context;
 
-import ru.nsu.ccfit.khudyakov.core.exception.IdFieldNotFoundException;
+import ru.nsu.ccfit.khudyakov.core.exception.core.IdFieldNotFoundException;
 import ru.nsu.ccfit.khudyakov.core.mapping.context.entity.PersistentEntity;
-import ru.nsu.ccfit.khudyakov.core.mapping.context.property.MongoPersistentProperty;
 import ru.nsu.ccfit.khudyakov.core.mapping.context.property.PersistentProperty;
 import ru.nsu.ccfit.khudyakov.core.mapping.context.property.Property;
 import ru.nsu.ccfit.khudyakov.core.mapping.context.type.TypeInfo;
-import ru.nsu.ccfit.khudyakov.core.persistence.Id;
 
 import java.lang.reflect.Field;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public abstract class AbstractMappingContext<E extends PersistentEntity<?, P>, P extends PersistentProperty<P>>

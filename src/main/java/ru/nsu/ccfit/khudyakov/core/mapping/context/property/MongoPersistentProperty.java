@@ -1,6 +1,6 @@
 package ru.nsu.ccfit.khudyakov.core.mapping.context.property;
 
-import ru.nsu.ccfit.khudyakov.core.exception.NotValidPropertyTypeException;
+import ru.nsu.ccfit.khudyakov.core.exception.core.NotValidPropertyTypeException;
 import ru.nsu.ccfit.khudyakov.core.mapping.context.entity.PersistentEntity;
 import ru.nsu.ccfit.khudyakov.core.mapping.context.type.TypeInfo;
 import ru.nsu.ccfit.khudyakov.core.persistence.Ref;

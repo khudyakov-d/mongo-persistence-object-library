@@ -2,13 +2,13 @@ package ru.nsu.ccfit.khudyakov.core.mapping.context.entity;
 
 import org.apache.commons.lang3.StringUtils;
 import org.bson.types.ObjectId;
-import ru.nsu.ccfit.khudyakov.core.exception.DocumentAnnotationNotFoundException;
-import ru.nsu.ccfit.khudyakov.core.exception.NotValidIdTypeException;
+import ru.nsu.ccfit.khudyakov.core.exception.core.DocumentAnnotationNotFoundException;
+import ru.nsu.ccfit.khudyakov.core.exception.core.NotValidIdTypeException;
 import ru.nsu.ccfit.khudyakov.core.mapping.context.property.MongoPersistentProperty;
 import ru.nsu.ccfit.khudyakov.core.mapping.context.property.PersistentPropertyAccessor;
 import ru.nsu.ccfit.khudyakov.core.mapping.context.property.PersistentPropertyAccessorImpl;
-import ru.nsu.ccfit.khudyakov.core.persistence.Document;
 import ru.nsu.ccfit.khudyakov.core.mapping.context.type.TypeInfo;
+import ru.nsu.ccfit.khudyakov.core.persistence.Document;
 import ru.nsu.ccfit.khudyakov.core.persistence.Id;
 
 import java.beans.Introspector;

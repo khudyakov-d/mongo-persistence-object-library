@@ -1,5 +1,6 @@
 package ru.nsu.ccfit.khudyakov.core;
 
+import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import org.bson.Document;
@@ -15,6 +16,7 @@ import ru.nsu.ccfit.khudyakov.core.mapping.context.type.ParametrizedListTypeInfo
 import ru.nsu.ccfit.khudyakov.core.mapping.document.DocumentAccessor;
 import ru.nsu.ccfit.khudyakov.core.mapping.document.DocumentAccessorImpl;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -74,6 +76,7 @@ public class MongoOperationsImpl implements MongoOperations {
         return doFind(id, entityClass, new HashMap<>());
     }
 
+
     private <T> T doFind(Object id, Class<T> entityClass, Map<ObjectId, Object> resolvedRefs) {
         ClassTypeInfo<T> typeInfo = ClassTypeInfo.from(entityClass);
         MongoPersistentEntity<?> persistentEntity = mongoContext.getPersistentEntity(typeInfo);
@@ -82,7 +85,7 @@ public class MongoOperationsImpl implements MongoOperations {
         MongoCollection<Document> collection = mongoDatabase.getCollection(collectionName);
 
         ObjectId documentId = convertId(id);
-        Document document = collection.find(eq(ID, documentId)).first();
+        Document document = collection.find(eq(ID, convertId(id))).first();
         if (document == null) {
             return null;
         }
@@ -101,22 +104,22 @@ public class MongoOperationsImpl implements MongoOperations {
                                       Map<ObjectId, Object> resolvedRefs) {
 
         DocumentAccessor documentAccessor = new DocumentAccessorImpl(document);
-
         PersistentPropertyAccessor<T> propertyAccessor = persistentEntity.getPropertyAccessor(entityValue);
 
         List<MongoPersistentProperty> associations = persistentEntity.getAssociations();
-        for (MongoPersistentProperty association : associations) {
+        associations.forEach(association -> {
             if (association.getTypeInfo().isCollection()) {
                 readCollectionAssociation(documentAccessor, propertyAccessor, association, resolvedRefs);
             } else {
                 readObjectAssociation(documentAccessor, propertyAccessor, association, resolvedRefs);
             }
-        }
+        });
     }
 
     private <T> void readCollectionAssociation(DocumentAccessor documentAccessor,
                                                PersistentPropertyAccessor<T> propertyAccessor,
-                                               MongoPersistentProperty association, Map<ObjectId, Object> resolvedRefs) {
+                                               MongoPersistentProperty association,
+                                               Map<ObjectId, Object> resolvedRefs) {
         ParametrizedListTypeInfo<?> typeInfo = (ParametrizedListTypeInfo<?>) association.getTypeInfo();
         List<?> refs = (List<?>) documentAccessor.get(association);
         if (refs == null) {
@@ -128,7 +131,6 @@ public class MongoOperationsImpl implements MongoOperations {
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
         propertyAccessor.setProperty(association, refValues);
-
     }
 
     private <T> void readObjectAssociation(DocumentAccessor documentAccessor,
@@ -182,6 +184,30 @@ public class MongoOperationsImpl implements MongoOperations {
         Object id = propertyAccessor.getPropertyValue(persistentEntity.getIdProperty());
 
         collection.deleteOne(eq(ID, convertId(id)));
+    }
+
+    @Override
+    public <T> List<T> find(Document queryDocument, Class<T> entityClass) {
+        ClassTypeInfo<T> typeInfo = ClassTypeInfo.from(entityClass);
+        MongoPersistentEntity<?> persistentEntity = mongoContext.getPersistentEntity(typeInfo);
+
+        String collectionName = persistentEntity.getCollectionName();
+        MongoCollection<Document> collection = mongoDatabase.getCollection(collectionName);
+
+        FindIterable<Document> documents = collection.find(queryDocument);
+
+        List<T> entities = new ArrayList<>();
+        Map<ObjectId, Object> resolvedRefs = new HashMap<>();
+
+        for (Document document : documents) {
+            T entity = mongoConverter.read(entityClass, document);
+            resolvedRefs.put(convertId(document.get(ID)), entity);
+            readAssociations(persistentEntity, entity, document, resolvedRefs);
+
+            entities.add(entity);
+        }
+
+        return entities;
     }
 
 }
