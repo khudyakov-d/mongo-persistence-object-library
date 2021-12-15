@@ -1,6 +1,6 @@
 package ru.nsu.ccfit.khudyakov.core.mapping.context.type;
 
-import ru.nsu.ccfit.khudyakov.core.exception.core.NotValidPropertyTypeException;
+import ru.nsu.ccfit.khudyakov.core.exception.NotValidPropertyTypeException;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;

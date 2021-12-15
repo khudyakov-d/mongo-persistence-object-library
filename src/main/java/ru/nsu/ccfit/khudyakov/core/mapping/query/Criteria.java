@@ -1,5 +1,6 @@
 package ru.nsu.ccfit.khudyakov.core.mapping.query;
 
+import org.apache.commons.lang3.StringUtils;
 import org.bson.Document;
 
 import java.util.ArrayList;
@@ -22,17 +23,31 @@ public class Criteria {
     private String field;
     private Object value = NO_VALUE;
 
-    private List<Criteria> criteriaChain;
-    private LinkedHashMap<String, Object> criteriaOperators = new LinkedHashMap<>();
+    private final List<Criteria> criteriaChain;
+    private final LinkedHashMap<String, Object> criteriaOperators = new LinkedHashMap<>();
 
     public static Criteria where(String field) {
         return new Criteria(field);
+    }
+
+    public Criteria() {
+        this.criteriaChain = new ArrayList<>();
     }
 
     public Criteria(String field) {
         this.criteriaChain = new ArrayList<>();
         this.criteriaChain.add(this);
         this.field = field;
+    }
+
+    protected Criteria(List<Criteria> criteriaChain, String field) {
+        this.criteriaChain = criteriaChain;
+        this.criteriaChain.add(this);
+        this.field = field;
+    }
+
+    public Criteria and(String field) {
+        return new Criteria(this.criteriaChain, field);
     }
 
     public Criteria is(Object value) {
@@ -63,14 +78,14 @@ public class Criteria {
         return this;
     }
 
-    public Criteria or(Criteria... criteria) {
+    public Criteria orOperator(Criteria... criteria) {
         if (criteria == null || criteria.length == 0) {
             throw new IllegalArgumentException();
         }
         return getOperatorCriteria(OR_OPERATOR, criteria);
     }
 
-    public Criteria and(Criteria... criteria) {
+    public Criteria andOperator(Criteria... criteria) {
         if (criteria == null || criteria.length == 0    ) {
             throw new IllegalArgumentException();
         }
@@ -104,11 +119,6 @@ public class Criteria {
     private Document getCriteriaObjectInner() {
         Document criteriaDocument = new Document();
 
-        if (!NO_VALUE.equals(this.value)) {
-            criteriaDocument.put(this.field, this.value);
-            return criteriaDocument;
-        }
-
         boolean not = false;
         for (Entry<String, Object> e : criteriaOperators.entrySet()) {
             String operator = e.getKey();
@@ -125,6 +135,17 @@ public class Criteria {
             } else {
                 criteriaDocument.put(operator, operatorValue);
             }
+        }
+
+        if (StringUtils.isBlank(this.field)) {
+            return criteriaDocument;
+        }
+
+        if (!NO_VALUE.equals(this.value)) {
+            Document document = new Document();
+            document.put(this.field, this.value);
+            document.putAll(criteriaDocument);
+            return document;
         }
 
         return new Document(this.field, criteriaDocument);

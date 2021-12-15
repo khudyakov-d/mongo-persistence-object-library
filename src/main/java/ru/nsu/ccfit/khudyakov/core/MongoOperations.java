@@ -6,11 +6,11 @@ import java.util.List;
 
 public interface MongoOperations {
 
-    <T> T save(T objectToSave);
-
     <T> T findById(Object id, Class<T> entityClass);
 
-    <T> List<T> find(Document queryDocument, Class<T> entityClass);
+    <T> List<T> find(Document criteriaDocument, Class<T> entityClass);
+
+    <T> T save(T objectToSave);
 
     void remove(Object object);
 

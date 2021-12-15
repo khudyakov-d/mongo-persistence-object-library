@@ -40,31 +40,6 @@ public class MongoOperationsImpl implements MongoOperations {
     }
 
     @Override
-    public <T> T save(T entity) {
-        if (entity == null) {
-            throw new IllegalArgumentException("entity must not be null");
-        }
-
-        ClassTypeInfo<?> typeInfo = ClassTypeInfo.from(entity.getClass());
-        MongoPersistentEntity<?> persistentEntity = mongoContext.getPersistentEntity(typeInfo);
-
-        MongoCollection<Document> collection = mongoDatabase.getCollection(persistentEntity.getCollectionName());
-        Document document = mongoConverter.write(entity);
-        doSave(document, collection);
-
-        return findById(document.get(ID), (Class<T>) entity.getClass());
-    }
-
-    private void doSave(Document document, MongoCollection<Document> collection) {
-        Object id = document.get(ID);
-        if (id == null) {
-            collection.insertOne(document);
-        } else {
-            collection.replaceOne(eq(ID, id), document);
-        }
-    }
-
-    @Override
     public <T> T findById(Object id, Class<T> entityClass) {
         if (id == null) {
             throw new IllegalArgumentException("id must not be null");
@@ -75,7 +50,6 @@ public class MongoOperationsImpl implements MongoOperations {
 
         return doFind(id, entityClass, new HashMap<>());
     }
-
 
     private <T> T doFind(Object id, Class<T> entityClass, Map<ObjectId, Object> resolvedRefs) {
         ClassTypeInfo<T> typeInfo = ClassTypeInfo.from(entityClass);
@@ -96,6 +70,40 @@ public class MongoOperationsImpl implements MongoOperations {
         readAssociations(persistentEntity, result, document, resolvedRefs);
 
         return result;
+    }
+
+    @Override
+    public <T> List<T> find(Document criteriaDocument, Class<T> entityClass) {
+        if (criteriaDocument == null) {
+            throw new IllegalArgumentException("criteriaDocument must not be null");
+        }
+        if (entityClass == null) {
+            throw new IllegalArgumentException("entityClass must not be null");
+        }
+
+        return doFind(criteriaDocument, entityClass);
+    }
+
+    private <T> List<T> doFind(Document criteriaDocument, Class<T> entityClass) {
+        ClassTypeInfo<T> typeInfo = ClassTypeInfo.from(entityClass);
+        MongoPersistentEntity<?> persistentEntity = mongoContext.getPersistentEntity(typeInfo);
+
+        String collectionName = persistentEntity.getCollectionName();
+        MongoCollection<Document> collection = mongoDatabase.getCollection(collectionName);
+
+        FindIterable<Document> documents = collection.find(criteriaDocument);
+
+        List<T> entities = new ArrayList<>();
+        Map<ObjectId, Object> resolvedRefs = new HashMap<>();
+
+        for (Document document : documents) {
+            T entity = mongoConverter.read(entityClass, document);
+            resolvedRefs.put(convertId(document.get(ID)), entity);
+            readAssociations(persistentEntity, entity, document, resolvedRefs);
+
+            entities.add(entity);
+        }
+        return entities;
     }
 
     private <T> void readAssociations(MongoPersistentEntity<?> persistentEntity,
@@ -168,6 +176,31 @@ public class MongoOperationsImpl implements MongoOperations {
     }
 
     @Override
+    public <T> T save(T entity) {
+        if (entity == null) {
+            throw new IllegalArgumentException("entity must not be null");
+        }
+
+        ClassTypeInfo<?> typeInfo = ClassTypeInfo.from(entity.getClass());
+        MongoPersistentEntity<?> persistentEntity = mongoContext.getPersistentEntity(typeInfo);
+
+        MongoCollection<Document> collection = mongoDatabase.getCollection(persistentEntity.getCollectionName());
+        Document document = mongoConverter.write(entity);
+        doSave(document, collection);
+
+        return findById(document.get(ID), (Class<T>) entity.getClass());
+    }
+
+    private void doSave(Document document, MongoCollection<Document> collection) {
+        Object id = document.get(ID);
+        if (id == null) {
+            collection.insertOne(document);
+        } else {
+            collection.replaceOne(eq(ID, id), document);
+        }
+    }
+
+    @Override
     public void remove(Object entity) {
         if (entity == null) {
             throw new IllegalArgumentException("entity must not be null");
@@ -184,30 +217,6 @@ public class MongoOperationsImpl implements MongoOperations {
         Object id = propertyAccessor.getPropertyValue(persistentEntity.getIdProperty());
 
         collection.deleteOne(eq(ID, convertId(id)));
-    }
-
-    @Override
-    public <T> List<T> find(Document queryDocument, Class<T> entityClass) {
-        ClassTypeInfo<T> typeInfo = ClassTypeInfo.from(entityClass);
-        MongoPersistentEntity<?> persistentEntity = mongoContext.getPersistentEntity(typeInfo);
-
-        String collectionName = persistentEntity.getCollectionName();
-        MongoCollection<Document> collection = mongoDatabase.getCollection(collectionName);
-
-        FindIterable<Document> documents = collection.find(queryDocument);
-
-        List<T> entities = new ArrayList<>();
-        Map<ObjectId, Object> resolvedRefs = new HashMap<>();
-
-        for (Document document : documents) {
-            T entity = mongoConverter.read(entityClass, document);
-            resolvedRefs.put(convertId(document.get(ID)), entity);
-            readAssociations(persistentEntity, entity, document, resolvedRefs);
-
-            entities.add(entity);
-        }
-
-        return entities;
     }
 
 }

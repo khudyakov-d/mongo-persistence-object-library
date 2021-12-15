@@ -5,16 +5,44 @@ import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
 import ru.nsu.ccfit.khudyakov.core.MongoOperations;
 import ru.nsu.ccfit.khudyakov.core.MongoOperationsImpl;
+import ru.nsu.ccfit.khudyakov.core.mapping.query.Criteria;
 import ru.nsu.ccfit.khudyakov.test.Fruit;
 import ru.nsu.ccfit.khudyakov.test.FruitsRepository;
-import ru.nsu.ccfit.khudyakov.test.ShopRepository;
-import ru.nsu.ccfit.khudyakov.test.Variety;
 
 import java.util.List;
-import java.util.Optional;
 
 public class Main {
 
+    public static void main(String[] args) {
+        try (MongoClient mongoClient = MongoClients.create()) {
+
+            MongoDatabase database = mongoClient.getDatabase("mydb");
+            MongoOperations mongoOperations = new MongoOperationsImpl(database);
+
+            FruitsRepository fruitsRepository = new FruitsRepository(mongoOperations, Fruit.class);
+            fruitsRepository.save(createFruit("apple", 10d));
+            fruitsRepository.save(createFruit("banana", 20d));
+            fruitsRepository.save(createFruit("mango", 30d));
+
+            Criteria criteria = new Criteria().orOperator(
+                    Criteria.where("name").is("mango"),
+                    Criteria.where("name").is("banana")
+            );
+
+            List<Fruit> fruits = fruitsRepository.find(criteria);
+
+            System.out.println();
+        }
+    }
+
+    private static Fruit createFruit(String name, Double price) {
+        Fruit fruit = new Fruit();
+        fruit.setName(name);
+        fruit.setPrice(price);
+        return fruit;
+    }
+
+    /*
     public static void main(String[] args) {
         try (MongoClient mongoClient = MongoClients.create()) {
 
@@ -43,11 +71,12 @@ public class Main {
 
             System.out.println();
 
-            /*
             fruitsRepository.delete(fruit);
             searchResult = fruitsRepository.findById(fruit.getId());
-            System.out.println(searchResult.isEmpty());;*/
+            System.out.println(searchResult.isEmpty());;*//*
+
         }
-    }
+    }*/
+
 
 }
