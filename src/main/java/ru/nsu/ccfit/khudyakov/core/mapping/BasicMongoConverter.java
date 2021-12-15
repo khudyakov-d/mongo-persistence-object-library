@@ -31,7 +31,6 @@ public class BasicMongoConverter implements MongoConverter {
         return MongoConverterImplHolder.instance;
     }
 
-
     @Override
     public Document write(Object entity) {
         Class<?> entityType = entity.getClass();

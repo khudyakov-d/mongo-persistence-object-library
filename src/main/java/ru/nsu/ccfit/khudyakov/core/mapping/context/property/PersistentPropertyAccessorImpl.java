@@ -1,6 +1,8 @@
 package ru.nsu.ccfit.khudyakov.core.mapping.context.property;
 
-import java.lang.reflect.Field;
+import java.beans.PropertyDescriptor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 public class PersistentPropertyAccessorImpl<T> implements PersistentPropertyAccessor<T>{
 
@@ -12,24 +14,28 @@ public class PersistentPropertyAccessorImpl<T> implements PersistentPropertyAcce
 
     @Override
     public void setProperty(PersistentProperty<?> property, Object value) {
-        Field field = property.getField();
-        field.setAccessible(true);
         try {
-            field.set(bean, value);
-        } catch (IllegalAccessException e) {
+            PropertyDescriptor descriptor = property.getDescriptor();
+            Method writeMethod = descriptor.getWriteMethod();
+            writeMethod.invoke(bean, value);
+        } catch (IllegalAccessException | InvocationTargetException e) {
             throw new IllegalStateException(e);
         }
     }
 
     @Override
     public Object getPropertyValue(PersistentProperty<?> property) {
-        Field field = property.getField();
-        field.setAccessible(true);
         try {
-            return field.get(bean);
-        } catch (IllegalAccessException e) {
+            PropertyDescriptor descriptor = property.getDescriptor();
+            Method readMethod = descriptor.getReadMethod();
+            return readMethod.invoke(bean);
+        } catch (IllegalAccessException | InvocationTargetException e) {
             throw new IllegalStateException(e);
         }
+    }
+
+    public T getBean() {
+        return bean;
     }
 
 }

@@ -20,7 +20,7 @@ public class Fruit {
 
     private Double price;
 
-    @Ref
+    @Ref(lazy = true)
     private List<Variety> varieties;
 
 }

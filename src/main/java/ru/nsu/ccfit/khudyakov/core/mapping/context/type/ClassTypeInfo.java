@@ -1,5 +1,7 @@
 package ru.nsu.ccfit.khudyakov.core.mapping.context.type;
 
+import ru.nsu.ccfit.khudyakov.utils.ClassUtils;
+
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -14,8 +16,9 @@ public class ClassTypeInfo<T> extends TypeInfoDiscoverer<T> {
         this.clazz = type;
     }
     
-    public static <T> ClassTypeInfo<T> from(Class<T> type) {
-        return (ClassTypeInfo<T>) CLASS_TYPE_INFO_CACHE.computeIfAbsent(type, ClassTypeInfo::new);
+    public static ClassTypeInfo<?> from(Class<?> type) {
+        Class<?> userClass = ClassUtils.getUserClass(type);
+        return CLASS_TYPE_INFO_CACHE.computeIfAbsent(userClass, ClassTypeInfo::new);
     }
     
     @Override

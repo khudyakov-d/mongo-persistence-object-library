@@ -6,4 +6,6 @@ public interface PersistentPropertyAccessor<T> {
 
     Object getPropertyValue(PersistentProperty<?> property);
 
+    T getBean();
+
 }

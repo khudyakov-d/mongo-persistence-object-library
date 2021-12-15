@@ -3,6 +3,8 @@ package ru.nsu.ccfit.khudyakov.core;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
+import net.sf.cglib.proxy.Enhancer;
+import net.sf.cglib.proxy.LazyLoader;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 import ru.nsu.ccfit.khudyakov.core.mapping.BasicMongoConverter;
@@ -52,7 +54,7 @@ public class MongoOperationsImpl implements MongoOperations {
     }
 
     private <T> T doFind(Object id, Class<T> entityClass, Map<ObjectId, Object> resolvedRefs) {
-        ClassTypeInfo<T> typeInfo = ClassTypeInfo.from(entityClass);
+        ClassTypeInfo<?> typeInfo = ClassTypeInfo.from(entityClass);
         MongoPersistentEntity<?> persistentEntity = mongoContext.getPersistentEntity(typeInfo);
 
         String collectionName = persistentEntity.getCollectionName();
@@ -66,7 +68,6 @@ public class MongoOperationsImpl implements MongoOperations {
 
         T result = mongoConverter.read(entityClass, document);
         resolvedRefs.put(documentId, result);
-
         readAssociations(persistentEntity, result, document, resolvedRefs);
 
         return result;
@@ -85,7 +86,7 @@ public class MongoOperationsImpl implements MongoOperations {
     }
 
     private <T> List<T> doFind(Document criteriaDocument, Class<T> entityClass) {
-        ClassTypeInfo<T> typeInfo = ClassTypeInfo.from(entityClass);
+        ClassTypeInfo<?> typeInfo = ClassTypeInfo.from(entityClass);
         MongoPersistentEntity<?> persistentEntity = mongoContext.getPersistentEntity(typeInfo);
 
         String collectionName = persistentEntity.getCollectionName();
@@ -115,45 +116,73 @@ public class MongoOperationsImpl implements MongoOperations {
         PersistentPropertyAccessor<T> propertyAccessor = persistentEntity.getPropertyAccessor(entityValue);
 
         List<MongoPersistentProperty> associations = persistentEntity.getAssociations();
+
         associations.forEach(association -> {
-            if (association.getTypeInfo().isCollection()) {
-                readCollectionAssociation(documentAccessor, propertyAccessor, association, resolvedRefs);
+            if (documentAccessor.get(association) == null) {
+                return;
+            }
+
+            Object associationValue;
+            if (association.isLazyAssociation()) {
+                associationValue = readLazyAssociation(association, documentAccessor, resolvedRefs);
             } else {
-                readObjectAssociation(documentAccessor, propertyAccessor, association, resolvedRefs);
+                associationValue = readAssociation(association, documentAccessor, resolvedRefs);
+            }
+
+            if (associationValue != null) {
+                propertyAccessor.setProperty(association, associationValue);
             }
         });
     }
 
-    private <T> void readCollectionAssociation(DocumentAccessor documentAccessor,
-                                               PersistentPropertyAccessor<T> propertyAccessor,
-                                               MongoPersistentProperty association,
-                                               Map<ObjectId, Object> resolvedRefs) {
+    private Object readLazyAssociation(MongoPersistentProperty association,
+                                       DocumentAccessor documentAccessor,
+                                       Map<ObjectId, Object> resolvedRefs) {
+        Enhancer enhancer = new Enhancer();
+        Class<?> returnType = association.getDescriptor().getReadMethod().getReturnType();
+        enhancer.setSuperclass(returnType);
+        enhancer.setCallback((LazyLoader) () -> getObject(association, documentAccessor, resolvedRefs));
+        return enhancer.create();
+    }
+
+    private Object getObject(MongoPersistentProperty association, DocumentAccessor documentAccessor, Map<ObjectId, Object> resolvedRefs) {
+        return readAssociation(association, documentAccessor, resolvedRefs);
+    }
+
+    private Object readAssociation(MongoPersistentProperty association,
+                                   DocumentAccessor documentAccessor,
+                                   Map<ObjectId, Object> resolvedRefs) {
+        if (association.getTypeInfo().isCollection()) {
+            return readCollectionAssociation(association, documentAccessor, resolvedRefs);
+        } else {
+            return readObjectAssociation(association, documentAccessor, resolvedRefs);
+        }
+    }
+
+    private Object readCollectionAssociation(MongoPersistentProperty association,
+                                             DocumentAccessor documentAccessor,
+                                             Map<ObjectId, Object> resolvedRefs) {
         ParametrizedListTypeInfo<?> typeInfo = (ParametrizedListTypeInfo<?>) association.getTypeInfo();
         List<?> refs = (List<?>) documentAccessor.get(association);
         if (refs == null) {
-            return;
+            return null;
         }
 
-        List<?> refValues = refs.stream()
+        return refs.stream()
                 .map(ref -> resolveRef(typeInfo.getArgumentType(), ref, resolvedRefs))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
-        propertyAccessor.setProperty(association, refValues);
     }
 
-    private <T> void readObjectAssociation(DocumentAccessor documentAccessor,
-                                           PersistentPropertyAccessor<T> propertyAccessor,
-                                           MongoPersistentProperty association,
-                                           Map<ObjectId, Object> resolvedRefs) {
+    private Object readObjectAssociation(MongoPersistentProperty association,
+                                         DocumentAccessor documentAccessor,
+                                         Map<ObjectId, Object> resolvedRefs) {
         Object ref = documentAccessor.get(association);
         if (ref == null) {
-            return;
+            return null;
         }
 
-        Object refValue = resolveRef(association.getTypeInfo().getType(), ref, resolvedRefs);
-        if (refValue != null) {
-            propertyAccessor.setProperty(association, refValue);
-        }
+        return resolveRef(association.getTypeInfo().getType(), ref, resolvedRefs);
     }
 
     private Object resolveRef(Class<?> type, Object ref, Map<ObjectId, Object> resolvedRefs) {

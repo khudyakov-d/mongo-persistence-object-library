@@ -5,6 +5,7 @@ import ru.nsu.ccfit.khudyakov.core.mapping.context.entity.PersistentEntity;
 import ru.nsu.ccfit.khudyakov.core.mapping.context.type.TypeInfo;
 import ru.nsu.ccfit.khudyakov.core.persistence.Ref;
 
+import java.beans.PropertyDescriptor;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
@@ -56,6 +57,15 @@ public class MongoPersistentProperty extends AbstractPersistentProperty<MongoPer
         return getField().isAnnotationPresent(Ref.class);
     }
 
+    @Override
+    public boolean isLazyAssociation() {
+        return getField().getAnnotation(Ref.class).lazy();
+    }
+
+    public PropertyDescriptor getDescriptor() {
+        return property.getDescriptor();
+    }
+
     public static void validateProperty(Property property) {
         TypeInfo<?> type = property.getType();
         Field propertyField = property.getField();
@@ -63,9 +73,9 @@ public class MongoPersistentProperty extends AbstractPersistentProperty<MongoPer
         boolean isRef = propertyField.isAnnotationPresent(Ref.class);
         boolean isSimpleTypeWrapper = isSimpleTypeWrapper(type.getType());
 
-        if (isRef && isSimpleTypeWrapper) {
-            throw new NotValidPropertyTypeException(
-                    format("The reference field \"%s\" must not be a wrapper over primitive type", propertyField));
+        if (isRef && (isSimpleTypeWrapper || type.getType().isPrimitive())) {
+            throw new NotValidPropertyTypeException(format("The reference field \"%s\" must not be a "
+                            + "wrapper over primitive type or primitive type", propertyField));
         }
 
         if (!isRef && !isSimpleTypeWrapper) {

@@ -5,14 +5,17 @@ import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
 import ru.nsu.ccfit.khudyakov.core.MongoOperations;
 import ru.nsu.ccfit.khudyakov.core.MongoOperationsImpl;
-import ru.nsu.ccfit.khudyakov.core.mapping.query.Criteria;
 import ru.nsu.ccfit.khudyakov.test.Fruit;
 import ru.nsu.ccfit.khudyakov.test.FruitsRepository;
+import ru.nsu.ccfit.khudyakov.test.Variety;
+import ru.nsu.ccfit.khudyakov.test.VarietyRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 public class Main {
 
+/*
     public static void main(String[] args) {
         try (MongoClient mongoClient = MongoClients.create()) {
 
@@ -41,15 +44,16 @@ public class Main {
         fruit.setPrice(price);
         return fruit;
     }
+*/
 
-    /*
+
     public static void main(String[] args) {
         try (MongoClient mongoClient = MongoClients.create()) {
 
             MongoDatabase database = mongoClient.getDatabase("mydb");
             MongoOperations mongoOperations = new MongoOperationsImpl(database);
 
-            ShopRepository shopRepository = new ShopRepository(mongoOperations, Variety.class);
+            VarietyRepository shopRepository = new VarietyRepository(mongoOperations, Variety.class);
             Variety variety = new Variety();
             variety.setName("red");
             variety = shopRepository.save(variety);
@@ -66,6 +70,9 @@ public class Main {
             fruit.setVarieties(List.of(variety));
             fruit = fruitsRepository.save(fruit);
 
+            List<Variety> varieties = fruit.getVarieties();
+            int size = varieties.size();
+
             Optional<Fruit> searchResult = fruitsRepository.findById(fruit.getId());
             fruit = searchResult.orElseThrow();
 
@@ -73,10 +80,9 @@ public class Main {
 
             fruitsRepository.delete(fruit);
             searchResult = fruitsRepository.findById(fruit.getId());
-            System.out.println(searchResult.isEmpty());;*//*
-
+            System.out.println(searchResult.isEmpty());
         }
-    }*/
+    }
 
 
 }

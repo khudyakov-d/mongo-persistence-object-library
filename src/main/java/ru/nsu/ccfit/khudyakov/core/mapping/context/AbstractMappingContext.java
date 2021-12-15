@@ -5,7 +5,9 @@ import ru.nsu.ccfit.khudyakov.core.mapping.context.entity.PersistentEntity;
 import ru.nsu.ccfit.khudyakov.core.mapping.context.property.PersistentProperty;
 import ru.nsu.ccfit.khudyakov.core.mapping.context.property.Property;
 import ru.nsu.ccfit.khudyakov.core.mapping.context.type.TypeInfo;
+import ru.nsu.ccfit.khudyakov.utils.ClassUtils;
 
+import java.beans.PropertyDescriptor;
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
@@ -36,11 +38,13 @@ public abstract class AbstractMappingContext<E extends PersistentEntity<?, P>, P
     private void addProperties(E entity) {
         TypeInfo<?> typeInfo = entity.getTypeInfo();
         Class<?> type = typeInfo.getType();
+        Map<String, PropertyDescriptor> descriptors = ClassUtils.getPropertyDescriptors(type);
 
         Field[] fields = type.getDeclaredFields();
         for (Field field : fields) {
             field.setAccessible(true);
-            Property property = new Property(typeInfo, field);
+            PropertyDescriptor descriptor = descriptors.get(field.getName());
+            Property property = new Property(typeInfo, field, descriptor);
             P persistentProperty = createPersistentProperty(property, entity);
             entity.addPersistentProperty(persistentProperty);
         }
@@ -50,6 +54,7 @@ public abstract class AbstractMappingContext<E extends PersistentEntity<?, P>, P
             throw new IdFieldNotFoundException();
         }
     }
+
 
     protected abstract <T> E createPersistentEntity(TypeInfo<T> typeInformation);
 
