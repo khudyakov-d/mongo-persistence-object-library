@@ -14,6 +14,7 @@ public class Criteria {
 
     private static final Object NO_VALUE = new Object();
 
+    private static final String NE_OPERATOR = "$ne";
     private static final String OR_OPERATOR = "$or";
     private static final String AND_OPERATOR = "$and";
     private static final String NOT_OPERATOR = "$not";
@@ -54,6 +55,9 @@ public class Criteria {
         if (!NO_VALUE.equals(this.value)) {
             throw new IllegalArgumentException();
         }
+        if (lastOperatorIsNot()) {
+            throw new IllegalArgumentException();
+        }
         this.value = value;
 
         return this;
@@ -63,19 +67,33 @@ public class Criteria {
         return is(null);
     }
 
+    public Criteria isNot(Object value) {
+        return getCriteria(value, NE_OPERATOR);
+    }
+
     public Criteria gt(Object value) {
-        criteriaOperators.put(GT_OPERATOR, value);
-        return this;
+        return getCriteria(value, GT_OPERATOR);
     }
 
     public Criteria lt(Object value) {
-        criteriaOperators.put(LT_OPERATOR, value);
-        return this;
+        return getCriteria(value, LT_OPERATOR);
     }
 
     public Criteria not() {
-        criteriaOperators.put(NOT_OPERATOR, null);
+        return getCriteria(null, NOT_OPERATOR);
+    }
+
+    private Criteria getCriteria(Object value, String gtOperator) {
+        criteriaOperators.put(gtOperator, value);
         return this;
+    }
+
+    private boolean lastOperatorIsNot() {
+        if (this.criteriaOperators.isEmpty()) {
+            return false;
+        }
+        Object lastOperator = this.criteriaOperators.keySet().toArray()[this.criteriaOperators.size() - 1];
+        return NOT_OPERATOR.equals(lastOperator);
     }
 
     public Criteria orOperator(Criteria... criteria) {
