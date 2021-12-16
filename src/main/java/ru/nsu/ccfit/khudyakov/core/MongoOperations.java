@@ -8,12 +8,14 @@ public interface MongoOperations {
 
     <T> T findById(Object id, Class<T> entityClass);
 
+    <T> List<T> findAll(Class<T> entityClass);
+
     <T> List<T> findAll(Document criteriaDocument, Class<T> entityClass);
 
     <P, T> List<P> findAll(Class<T> entityClass, Document criteriaDocument, Class<P> projectionClass);
 
     <T> T save(T objectToSave);
 
-    void remove(Object object);
+    void delete(Object object);
 
 }

@@ -9,6 +9,8 @@ public interface CrudRepository<T, I> {
 
     Optional<T> findById(I id);
 
+    List<T> findAll();
+
     List<T> findAll(Criteria criteria);
 
     <P> List<P> findAll(Criteria criteria, Class<P> projectionClass);

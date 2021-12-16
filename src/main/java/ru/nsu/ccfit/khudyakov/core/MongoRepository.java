@@ -22,6 +22,11 @@ public abstract class MongoRepository<T, I> implements CrudRepository<T, I> {
     }
 
     @Override
+    public List<T> findAll() {
+        return mongoOperations.findAll(new Document(), entityClass);
+    }
+
+    @Override
     public List<T> findAll(Criteria criteria) {
         Document criteriaDocument = criteria == null ? new Document() :criteria.getCriteriaDocument();
         return mongoOperations.findAll(criteriaDocument, entityClass);
@@ -40,7 +45,7 @@ public abstract class MongoRepository<T, I> implements CrudRepository<T, I> {
 
     @Override
     public <S extends T> void delete(S entity) {
-        mongoOperations.remove(entity);
+        mongoOperations.delete(entity);
     }
 
 }

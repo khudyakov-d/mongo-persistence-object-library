@@ -63,6 +63,11 @@ public class MongoOperationsImpl implements MongoOperations {
         return doFind(id, entityClass, new HashMap<>());
     }
 
+    @Override
+    public <T> List<T> findAll(Class<T> entityClass) {
+        return findAll(new Document(), entityClass);
+    }
+
     private <T> T doFind(Object id, Class<T> entityClass, Map<ObjectId, Object> resolvedRefs) {
         ClassTypeInfo<?> typeInfo = from(entityClass);
         MongoPersistentEntity<?> persistentEntity = mongoContext.getPersistentEntity(typeInfo);
@@ -310,7 +315,7 @@ public class MongoOperationsImpl implements MongoOperations {
     }
 
     @Override
-    public void remove(Object entity) {
+    public void delete(Object entity) {
         if (entity == null) {
             throw new IllegalArgumentException("entity must not be null");
         }
