@@ -128,7 +128,7 @@ public class BasicMongoConverter implements MongoConverter {
                 .map(entity::getPropertyAccessor)
                 .map(accessor -> accessor.getPropertyValue(idProperty))
                 .map(idValue -> convertId(idProperty, idValue))
-                .map(objectId -> Map.of("$ref", entity.getCollectionName(), "_id", objectId))
+                .map(objectId -> Map.of("$ref", entity.getCollectionName(), "$id", objectId))
                 .orElseThrow();
     }
 

@@ -24,7 +24,12 @@ public abstract class MongoRepository<T, I> implements CrudRepository<T, I> {
     @Override
     public List<T> find(Criteria criteria) {
         Document criteriaDocument = criteria.getCriteriaDocument();
-        return mongoOperations.find(criteriaDocument, entityClass);
+        return mongoOperations.findAll(criteriaDocument, entityClass);
+    }
+
+    @Override
+    public <P> List<P> findAll(Class<P> projectionClass) {
+        return mongoOperations.findAll(entityClass, projectionClass);
     }
 
     @Override

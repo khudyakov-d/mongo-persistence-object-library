@@ -20,6 +20,8 @@ public interface PersistentEntity<T, P extends PersistentProperty<P>> {
 
     void addPersistentProperty(P property);
 
+    boolean containsPersistentProperty(String name);
+
     <B> PersistentPropertyAccessor<B> getPropertyAccessor(B bean);
 
 }

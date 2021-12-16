@@ -1,18 +1,5 @@
 package ru.nsu.ccfit.khudyakov;
 
-import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoClients;
-import com.mongodb.client.MongoDatabase;
-import ru.nsu.ccfit.khudyakov.core.MongoOperations;
-import ru.nsu.ccfit.khudyakov.core.MongoOperationsImpl;
-import ru.nsu.ccfit.khudyakov.test.Fruit;
-import ru.nsu.ccfit.khudyakov.test.FruitsRepository;
-import ru.nsu.ccfit.khudyakov.test.Variety;
-import ru.nsu.ccfit.khudyakov.test.VarietyRepository;
-
-import java.util.List;
-import java.util.Optional;
-
 public class Main {
 
 /*
@@ -47,6 +34,7 @@ public class Main {
 */
 
 
+/*
     public static void main(String[] args) {
         try (MongoClient mongoClient = MongoClients.create()) {
 
@@ -83,6 +71,21 @@ public class Main {
             System.out.println(searchResult.isEmpty());
         }
     }
+*/
+
+
+//    public static void main(String[] args) {
+//        try (MongoClient mongoClient = MongoClients.create()) {
+//
+//            MongoDatabase database = mongoClient.getDatabase("mydb");
+//            MongoOperations mongoOperations = new MongoOperationsImpl(database);
+//
+//            FruitsRepository fruitsRepository = new FruitsRepository(mongoOperations, Fruit.class);
+//            List<FruitDto> all = fruitsRepository.findAll(FruitDto.class);
+//            System.out.println();
+//        }
+//    }
+
 
 
 }

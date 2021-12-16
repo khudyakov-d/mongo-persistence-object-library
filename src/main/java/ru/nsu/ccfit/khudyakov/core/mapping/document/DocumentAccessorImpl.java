@@ -2,10 +2,9 @@ package ru.nsu.ccfit.khudyakov.core.mapping.document;
 
 import org.bson.Document;
 import org.bson.types.ObjectId;
-import ru.nsu.ccfit.khudyakov.core.mapping.context.entity.MongoPersistentEntity;
 import ru.nsu.ccfit.khudyakov.core.mapping.context.property.MongoPersistentProperty;
 
-public class DocumentAccessorImpl extends DocumentAccessor{
+public class DocumentAccessorImpl extends DocumentAccessor {
 
     public static final String ID = "_id";
 
@@ -24,7 +23,11 @@ public class DocumentAccessorImpl extends DocumentAccessor{
     }
 
     public Object get(MongoPersistentProperty property) {
-        return document.get(property.getFieldName());
+        if (property.isAssociation()) {
+            return document.get(property.getFieldName());
+        } else {
+            return document.get(property.getFieldName(), property.getTypeInfo().getType());
+        }
     }
 
     public ObjectId getId() {

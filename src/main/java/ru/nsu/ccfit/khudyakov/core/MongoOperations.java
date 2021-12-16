@@ -8,7 +8,9 @@ public interface MongoOperations {
 
     <T> T findById(Object id, Class<T> entityClass);
 
-    <T> List<T> find(Document criteriaDocument, Class<T> entityClass);
+    <T> List<T> findAll(Document criteriaDocument, Class<T> entityClass);
+
+    <P, T> List<P> findAll(Class<T> entityClass, Class<P> projectionClass);
 
     <T> T save(T objectToSave);
 

@@ -1,5 +1,6 @@
 package ru.nsu.ccfit.khudyakov.core.mapping.context.entity;
 
+import ru.nsu.ccfit.khudyakov.core.mapping.context.property.MongoPersistentProperty;
 import ru.nsu.ccfit.khudyakov.core.mapping.context.property.PersistentProperty;
 import ru.nsu.ccfit.khudyakov.core.mapping.context.type.TypeInfo;
 
@@ -28,4 +29,5 @@ public abstract class AbstractPersistentEntity<T, P extends PersistentProperty<P
         return properties;
     }
 
+    public abstract MongoPersistentProperty getPersistentProperty(String name);
 }

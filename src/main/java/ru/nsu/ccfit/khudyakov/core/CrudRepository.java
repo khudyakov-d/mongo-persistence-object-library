@@ -11,6 +11,8 @@ public interface CrudRepository<T, I> {
 
     List<T> find(Criteria criteria);
 
+    <P> List<P> findAll(Class<P> projectionClass);
+
     <S extends T> S save(S entity);
 
     <S extends T> void delete(S entity);

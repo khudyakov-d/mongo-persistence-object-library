@@ -66,6 +66,19 @@ public class MongoPersistentEntity<T> extends AbstractPersistentEntity<T, MongoP
         properties.add(property);
     }
 
+    @Override
+    public boolean containsPersistentProperty(String name) {
+        return properties.stream().anyMatch(p -> p.getFieldName().equals(name));
+    }
+
+    @Override
+    public MongoPersistentProperty getPersistentProperty(String name) {
+        return properties.stream()
+                .filter(p -> p.getFieldName().equals(name))
+                .findFirst()
+                .orElse(null);
+    }
+
     private void addIdProperty(MongoPersistentProperty property) {
         Class<?> type = property.getTypeInfo().getType();
         boolean isValidType = SUPPORTED_ID_TYPES.stream()

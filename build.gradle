@@ -9,14 +9,22 @@ repositories {
     mavenCentral()
 }
 
+compileJava {
+    options.compilerArgs << '-parameters'
+}
+
 dependencies {
 
     //Mongo
     implementation 'org.mongodb:mongo-java-driver:3.12.10'
+    implementation 'org.projectlombok:lombok:1.18.20'
+    testAnnotationProcessor "org.projectlombok:lombok:1.18.20"
 
     //Tests
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.2'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.2'
+    testImplementation group: 'org.testcontainers', name: 'mongodb', version: '1.16.2'
+    testImplementation group: 'org.testcontainers', name: 'junit-jupiter', version: '1.16.2'
 
     //Lombok
     compileOnly 'org.projectlombok:lombok:1.18.22'
