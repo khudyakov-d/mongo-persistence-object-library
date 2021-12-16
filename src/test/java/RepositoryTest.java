@@ -10,6 +10,7 @@ import data.VarietyDto;
 import data.VarietyRepository;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -20,11 +21,12 @@ import ru.nsu.ccfit.khudyakov.core.MongoOperationsImpl;
 import ru.nsu.ccfit.khudyakov.core.mapping.query.Criteria;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @Testcontainers
-public class RepositoryTest {
+class RepositoryTest {
 
     private final Logger logger = LogManager.getLogger(RepositoryTest.class);
 
@@ -131,6 +133,24 @@ public class RepositoryTest {
             assertEquals(1, varieties.size());
             assertEquals("gala", varieties.get(0).getName());
             assertEquals(150d, varieties.get(0).getPrice());
+        }
+    }
+
+    @Test
+    void testRemove() {
+        try (MongoClient mongoClient = MongoClients.create(mongoDBContainer.getReplicaSetUrl())) {
+            MongoDatabase database = mongoClient.getDatabase(DATABASE_NAME);
+            MongoOperations mongoOperations = new MongoOperationsImpl(database);
+
+            FruitsRepository fruitsRepository = new FruitsRepository(mongoOperations, Fruit.class);
+
+            String fruitName = "apple";
+            Fruit fruit = createFruit(fruitName);
+            fruit = fruitsRepository.save(fruit);
+
+            fruitsRepository.delete(fruit);
+            Optional<Fruit> result = fruitsRepository.findById(fruit.getId());
+            Assertions.assertTrue(result.isEmpty());
         }
     }
 
