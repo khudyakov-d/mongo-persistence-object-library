@@ -4,11 +4,13 @@ import com.mongodb.DBRef;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
-import lombok.SneakyThrows;
 import net.sf.cglib.proxy.Enhancer;
 import net.sf.cglib.proxy.LazyLoader;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.bson.Document;
 import org.bson.types.ObjectId;
+import ru.nsu.ccfit.khudyakov.core.exception.FeatureNotSupportedException;
 import ru.nsu.ccfit.khudyakov.core.mapping.BasicMongoConverter;
 import ru.nsu.ccfit.khudyakov.core.mapping.MongoConverter;
 import ru.nsu.ccfit.khudyakov.core.mapping.context.MongoMappingContext;
@@ -23,6 +25,7 @@ import ru.nsu.ccfit.khudyakov.core.mapping.document.DocumentAccessorImpl;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Parameter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +36,8 @@ import static com.mongodb.client.model.Filters.eq;
 import static ru.nsu.ccfit.khudyakov.core.mapping.context.type.ClassTypeInfo.from;
 
 public class MongoOperationsImpl implements MongoOperations {
+
+    private final Logger logger = LogManager.getLogger(MongoOperationsImpl.class);
 
     public static final String ID = "_id";
 
@@ -152,6 +157,9 @@ public class MongoOperationsImpl implements MongoOperations {
     private Object resolveLazyRef(MongoPersistentProperty association,
                                   DocumentAccessor documentAccessor,
                                   Map<ObjectId, Object> resolvedRefs) {
+        logger.debug("Init lazy association {} for entity with id: {}",
+                association.getFieldName(), documentAccessor.getId());
+
         return readAssociation(association, documentAccessor, resolvedRefs);
     }
 
@@ -211,64 +219,70 @@ public class MongoOperationsImpl implements MongoOperations {
     }
 
 
-    @SneakyThrows
     @Override
-    public <P, T> List<P> findAll(Class<T> entityClass, Class<P> projectionClass) {
+    public <P, T> List<P> findAll(Class<T> entityClass, Document criteriaDocument, Class<P> projectionClass) {
         MongoPersistentEntity<?> persistentEntity = mongoContext.getPersistentEntity(from(entityClass));
 
         String collectionName = persistentEntity.getCollectionName();
         MongoCollection<Document> collection = mongoDatabase.getCollection(collectionName);
 
-        FindIterable<Document> documents = collection.find();
+        FindIterable<Document> documents = collection.find(criteriaDocument);
         Constructor<?> constructor = getConstructor(projectionClass);
-        return createProjection(persistentEntity, documents, constructor);
+
+        return doFindAll(persistentEntity, documents, constructor);
     }
 
-    private <P> List<P> createProjection(MongoPersistentEntity<?> persistentEntity,
-                                         FindIterable<Document> documents,
-                                         Constructor<?> constructor)  {
-       try {
-           Parameter[] projectionParams = constructor.getParameters();
+    private <P> List<P> doFindAll(MongoPersistentEntity<?> persistentEntity,
+                                  FindIterable<Document> documents,
+                                  Constructor<?> constructor) {
+        try {
+            List<P> result = new ArrayList<>();
+            for (Document document : documents) {
+                result.add((P) readProjection(persistentEntity, constructor, document));
+            }
 
-           List<P> result = new ArrayList<>();
-           for (Document document : documents) {
-               List<Object> params = new ArrayList<>();
-               for (Parameter projectionParam : projectionParams) {
-                   String projectionParamName = projectionParam.getName();
-                   Class<?> projectionParamType = projectionParam.getType();
+            return result;
+        } catch (Exception e) {
+            throw new IllegalStateException();
+        }
+    }
 
-                   MongoPersistentProperty property = persistentEntity.getPersistentProperty(projectionParamName);
-                   if (property == null) {
-                       params.add(null);
-                       continue;
-                   }
+    private Object readProjection(MongoPersistentEntity<?> persistentEntity,
+                                  Constructor<?> constructor,
+                                  Document document) {
+        try {
+            Parameter[] projectionParams = constructor.getParameters();
 
-                   if (property.isAssociation()) {
-                       throw new IllegalStateException();
-                   }
+            Object[] args = Arrays.stream(projectionParams)
+                    .map(projectionParam -> {
+                        String projectionParamName = projectionParam.getName();
+                        Class<?> projectionParamType = projectionParam.getType();
 
-                   params.add(document.get(projectionParamName, projectionParamType));
-               }
+                        MongoPersistentProperty property = persistentEntity.getPersistentProperty(projectionParamName);
+                        if (property == null) {
+                            return null;
+                        }
+                        if (property.isAssociation()) {
+                            throw new FeatureNotSupportedException("Projections with associations not yet supported");
+                        }
 
-               result.add((P) constructor.newInstance(params.toArray()));
-           }
-          
-           return result;
-       } catch (Exception e) {
-           throw new IllegalStateException();
-       }
+                        return document.get(projectionParamName, projectionParamType);
+                    })
+                    .toArray();
+
+            return constructor.newInstance(args);
+        } catch (Exception ex) {
+            throw new IllegalStateException();
+        }
     }
 
     private Constructor<?> getConstructor(Class<?> projectionClass) {
         Constructor<?>[] constructors = projectionClass.getConstructors();
-
         if (constructors.length != 1) {
             throw new IllegalArgumentException();
         }
-
         return constructors[0];
     }
-
 
     @Override
     public <T> T save(T entity) {

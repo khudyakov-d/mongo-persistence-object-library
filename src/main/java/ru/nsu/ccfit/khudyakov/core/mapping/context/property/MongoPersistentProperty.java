@@ -7,6 +7,7 @@ import ru.nsu.ccfit.khudyakov.core.persistence.Ref;
 
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -55,6 +56,11 @@ public class MongoPersistentProperty extends AbstractPersistentProperty<MongoPer
     @Override
     public boolean isAssociation() {
         return getField().isAnnotationPresent(Ref.class);
+    }
+
+    @Override
+    public boolean isTransient() {
+        return Modifier.isTransient(getField().getModifiers());
     }
 
     @Override

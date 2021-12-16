@@ -22,14 +22,15 @@ public abstract class MongoRepository<T, I> implements CrudRepository<T, I> {
     }
 
     @Override
-    public List<T> find(Criteria criteria) {
-        Document criteriaDocument = criteria.getCriteriaDocument();
+    public List<T> findAll(Criteria criteria) {
+        Document criteriaDocument = criteria == null ? new Document() :criteria.getCriteriaDocument();
         return mongoOperations.findAll(criteriaDocument, entityClass);
     }
 
     @Override
-    public <P> List<P> findAll(Class<P> projectionClass) {
-        return mongoOperations.findAll(entityClass, projectionClass);
+    public <P> List<P> findAll(Criteria criteria, Class<P> projectionClass) {
+        Document criteriaDocument = criteria == null ? new Document() :criteria.getCriteriaDocument();
+        return mongoOperations.findAll(entityClass, criteriaDocument, projectionClass);
     }
 
     @Override

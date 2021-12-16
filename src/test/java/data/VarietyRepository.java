@@ -1,4 +1,4 @@
-package ru.nsu.ccfit.khudyakov.test;
+package data;
 
 import ru.nsu.ccfit.khudyakov.core.MongoOperations;
 import ru.nsu.ccfit.khudyakov.core.MongoRepository;

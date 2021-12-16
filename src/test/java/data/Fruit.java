@@ -1,4 +1,4 @@
-package ru.nsu.ccfit.khudyakov.test;
+package data;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -6,10 +6,12 @@ import ru.nsu.ccfit.khudyakov.core.persistence.Document;
 import ru.nsu.ccfit.khudyakov.core.persistence.Id;
 import ru.nsu.ccfit.khudyakov.core.persistence.Ref;
 
+import java.util.List;
+
 @Getter
 @Setter
-@Document(collection = "varieties")
-public class Variety {
+@Document(collection = "fruits")
+public class Fruit {
 
     @Id
     private String id;
@@ -17,6 +19,9 @@ public class Variety {
     private String name;
 
     @Ref
-    private Fruit fruit;
+    private Tree tree;
+
+    @Ref(lazy = true)
+    private List<Variety> varieties;
 
 }

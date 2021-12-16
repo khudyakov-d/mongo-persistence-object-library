@@ -20,6 +20,8 @@ public interface PersistentProperty<P extends PersistentProperty<P>> {
 
     boolean isLazyAssociation();
 
+    boolean isTransient();
+
     PropertyDescriptor getDescriptor();
 
 }

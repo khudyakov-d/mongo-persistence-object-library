@@ -12,9 +12,7 @@ import ru.nsu.ccfit.khudyakov.core.mapping.context.type.TypeInfo;
 import ru.nsu.ccfit.khudyakov.core.mapping.document.DocumentAccessor;
 import ru.nsu.ccfit.khudyakov.core.mapping.document.DocumentAccessorImpl;
 
-import java.io.Serializable;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -66,10 +64,14 @@ public class BasicMongoConverter implements MongoConverter {
                                  PersistentPropertyAccessor<Object> propertyAccessor,
                                  DocumentAccessor documentAccessor) {
         List<MongoPersistentProperty> properties = persistentEntity.getProperties();
-        for (MongoPersistentProperty property : properties) {
+        properties.forEach(property -> {
             if (!property.isAssociation()) {
                 documentAccessor.put(property, propertyAccessor.getPropertyValue(property));
-                continue;
+                return;
+            }
+
+            if (property.isTransient()) {
+                return;
             }
 
             if (property.getTypeInfo().isCollection()) {
@@ -77,7 +79,7 @@ public class BasicMongoConverter implements MongoConverter {
             } else {
                 writeRef(property, propertyAccessor, documentAccessor);
             }
-        }
+        });
     }
 
     private void writeRefs(MongoPersistentProperty targetProperty,
@@ -88,7 +90,7 @@ public class BasicMongoConverter implements MongoConverter {
 
         List<?> values = (List<?>) propertyAccessor.getPropertyValue(targetProperty);
         if (values != null) {
-            List<Map<String, ? extends Serializable>> documents = values.stream()
+            List<Document> documents = values.stream()
                     .map(v -> mapChildValue(childEntity, v))
                     .collect(Collectors.toList());
 
@@ -104,7 +106,7 @@ public class BasicMongoConverter implements MongoConverter {
 
         Object propertyValue = propertyAccessor.getPropertyValue(targetProperty);
         if (propertyValue != null) {
-            Map<String, ? extends Serializable> document = mapChildValue(childEntity, propertyValue);
+            Document document = mapChildValue(childEntity, propertyValue);
             documentAccessor.put(targetProperty, document);
         }
     }
@@ -121,14 +123,19 @@ public class BasicMongoConverter implements MongoConverter {
         throw new IllegalArgumentException();
     }
 
-    private Map<String, ? extends Serializable> mapChildValue(MongoPersistentEntity<?> entity, Object entityValue) {
+    private Document mapChildValue(MongoPersistentEntity<?> entity, Object entityValue) {
         MongoPersistentProperty idProperty = entity.getIdProperty();
 
         return Optional.of(entityValue)
                 .map(entity::getPropertyAccessor)
                 .map(accessor -> accessor.getPropertyValue(idProperty))
                 .map(idValue -> convertId(idProperty, idValue))
-                .map(objectId -> Map.of("$ref", entity.getCollectionName(), "$id", objectId))
+                .map(objectId -> {
+                    Document document = new Document();
+                    document.put("$ref", entity.getCollectionName());
+                    document.put("$id", objectId);
+                    return document;
+                })
                 .orElseThrow();
     }
 
@@ -175,7 +182,7 @@ public class BasicMongoConverter implements MongoConverter {
                                     DocumentAccessor documentAccessor) {
         List<MongoPersistentProperty> properties = persistentEntity.getProperties();
         for (MongoPersistentProperty property : properties) {
-            if (property.isAssociation()) {
+            if (property.isAssociation() || property.isTransient()) {
                 continue;
             }
             Object propertyValue = documentAccessor.get(property);

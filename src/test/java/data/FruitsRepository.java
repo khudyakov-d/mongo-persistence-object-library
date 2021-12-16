@@ -1,7 +1,7 @@
-package ru.nsu.ccfit.khudyakov.test;
+package data;
 
-import ru.nsu.ccfit.khudyakov.core.MongoRepository;
 import ru.nsu.ccfit.khudyakov.core.MongoOperations;
+import ru.nsu.ccfit.khudyakov.core.MongoRepository;
 
 public class FruitsRepository extends MongoRepository<Fruit, String> {
 

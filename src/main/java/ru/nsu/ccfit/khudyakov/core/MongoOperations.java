@@ -10,7 +10,7 @@ public interface MongoOperations {
 
     <T> List<T> findAll(Document criteriaDocument, Class<T> entityClass);
 
-    <P, T> List<P> findAll(Class<T> entityClass, Class<P> projectionClass);
+    <P, T> List<P> findAll(Class<T> entityClass, Document criteriaDocument, Class<P> projectionClass);
 
     <T> T save(T objectToSave);
 
